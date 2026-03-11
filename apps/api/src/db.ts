@@ -48,3 +48,19 @@ export async function runMigrations(): Promise<void> {
     }
   }
 }
+
+export async function waitForDb(opts?: { timeoutMs?: number; intervalMs?: number }): Promise<void> {
+  const timeoutMs = opts?.timeoutMs ?? 60_000;
+  const intervalMs = opts?.intervalMs ?? 1_000;
+  const start = Date.now();
+  // Retry simple query until Postgres accepts connections.
+  while (true) {
+    try {
+      await pool.query("select 1 as ok");
+      return;
+    } catch (e) {
+      if (Date.now() - start > timeoutMs) throw e;
+      await new Promise((r) => setTimeout(r, intervalMs));
+    }
+  }
+}

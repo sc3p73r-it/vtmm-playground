@@ -5,7 +5,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import { z } from "zod";
 import { config } from "./config.js";
-import { pool, runMigrations } from "./db.js";
+import { runMigrations, waitForDb } from "./db.js";
 import { hashPassword, signJwt, verifyPassword } from "./crypto.js";
 import { requireAuth, type AuthedRequest } from "./auth.js";
 import { attachTerminalWss } from "./terminalWs.js";
@@ -15,7 +15,26 @@ import { getLab, listLabs } from "./labs.js";
 
 const app = express();
 app.use(helmet());
-app.use(cors({ origin: config.corsOrigin === "*" ? true : config.corsOrigin, credentials: true }));
+const corsOrigins =
+  config.corsOrigin.trim() === "*"
+    ? "*"
+    : config.corsOrigin
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+app.use(
+  cors({
+    origin:
+      corsOrigins === "*"
+        ? true
+        : (origin, cb) => {
+            if (!origin) return cb(null, true);
+            return cb(null, corsOrigins.includes(origin));
+          },
+    credentials: false
+  })
+);
 app.use(express.json({ limit: "1mb" }));
 app.use(morgan("combined"));
 
@@ -77,6 +96,7 @@ const server = http.createServer(app);
 attachTerminalWss(server);
 
 async function main() {
+  await waitForDb();
   await runMigrations();
   server.listen(config.port, () => {
     // eslint-disable-next-line no-console
@@ -92,4 +112,3 @@ main().catch((e) => {
   console.error(e);
   process.exit(1);
 });
-
