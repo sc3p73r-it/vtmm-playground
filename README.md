@@ -4,6 +4,15 @@ Full-stack web-based Linux playground:
 - `apps/web`: Next.js + Tailwind + xterm.js
 - `apps/api`: Express + WebSocket + Docker API (Ubuntu containers) + PostgreSQL
 
+## What You Get
+
+- User accounts (email + password)
+- Per-session Ubuntu container (isolated, resource limited)
+- Web terminal (real-time streaming over WebSocket)
+- File explorer + simple editor (read/write `/workspace`)
+- Command history (records entered lines; blocked commands are logged)
+- Prebuilt learning labs (Markdown content stored in Postgres)
+
 ## Prereqs
 
 - Node.js 20+
@@ -21,6 +30,55 @@ docker compose up --build
 2. Open:
 - Web: `http://localhost:3000`
 - API: `http://localhost:8080/healthz`
+
+## User Guide (Step By Step)
+
+### 1) Register
+
+1. Open `http://localhost:3000/register`
+2. Enter your email + a password (min 8 chars)
+3. Click `Create`
+
+Notes:
+- There is no default username/password.
+- Email must be unique.
+
+### 2) Login
+
+1. Open `http://localhost:3000/login`
+2. Enter your email + password
+3. Click `Sign in`
+
+### 3) Create a Linux Session (Container)
+
+1. Open `http://localhost:3000/dashboard`
+2. Click `New Session`
+
+### 4) Use the Terminal
+
+1. Open a session from the Dashboard (`Open`)
+2. Type commands in the Terminal panel
+
+Command history:
+- Lines are recorded when you press Enter.
+- Some dangerous patterns are blocked (best-effort) and show as `[blocked] ...`.
+
+### 5) Use the File Explorer + Editor
+
+- File explorer lists `/workspace`
+- Click a file to open in the editor
+- Click `Save` to write changes back into the container
+
+### 6) Labs
+
+1. From Dashboard, click a lab
+2. Follow the instructions
+3. Run commands inside your session terminal
+
+### 7) Reset / End Session
+
+- `Reset` destroys and recreates the container environment for that session
+- `End Session` destroys the container and marks the session ended
 
 ## Dev (without Compose)
 
@@ -45,6 +103,24 @@ Copy examples:
 
 - The API needs access to the Docker daemon to create per-user Ubuntu containers. In Compose, this is done by mounting `/var/run/docker.sock` into the API container.
 - Command filtering is best-effort; isolation is primarily enforced by container sandboxing and resource limits.
+
+## Troubleshooting
+
+### "Failed to fetch" on Register/Login
+
+This is a browser/network problem (the UI cannot reach the API, or CORS blocks it).
+
+Checklist:
+- API health: open `http://<host>:8080/healthz`
+- If you opened the UI via an IP (example `http://EC2_PUBLIC_IP:3000`), the API must be reachable at `http://EC2_PUBLIC_IP:8080`.
+- CORS:
+  - Local: `docker-compose.yml` sets `CORS_ORIGIN="*"`
+  - Prod: set `CORS_ORIGIN=https://playground.example.com`
+
+### API crashes on boot with Postgres errors
+
+- `depends_on` only controls start order; readiness is handled with a Postgres healthcheck and an API retry loop.
+- If it still fails, check `docker compose logs postgres` and confirm credentials match `DATABASE_URL`.
 
 ## Kubernetes
 
