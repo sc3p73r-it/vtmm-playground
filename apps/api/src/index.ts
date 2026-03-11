@@ -5,7 +5,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import { z } from "zod";
 import { config } from "./config.js";
-import { runMigrations, waitForDb } from "./db.js";
+import { pool, runMigrations, waitForDb } from "./db.js";
 import { hashPassword, signJwt, verifyPassword } from "./crypto.js";
 import { requireAuth, type AuthedRequest } from "./auth.js";
 import { attachTerminalWss } from "./terminalWs.js";
