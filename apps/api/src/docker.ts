@@ -1,4 +1,5 @@
 import Docker from "dockerode";
+import type { Readable } from "node:stream";
 import { config } from "./config.js";
 
 export const docker = new Docker({ socketPath: "/var/run/docker.sock" });
@@ -18,9 +19,9 @@ export async function ensureImage(image: string): Promise<void> {
   }
 
   await new Promise<void>((resolve, reject) => {
-    docker.pull(image, (err, stream) => {
+    docker.pull(image, (err: unknown, stream: Readable) => {
       if (err) return reject(err);
-      docker.modem.followProgress(stream, (e: any) => (e ? reject(e) : resolve()));
+      docker.modem.followProgress(stream, (e: unknown) => (e ? reject(e) : resolve()));
     });
   });
 }
@@ -95,4 +96,3 @@ export async function destroyPlaygroundContainer(containerId: string | null, vol
     }
   }
 }
-
