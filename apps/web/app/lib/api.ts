@@ -2,7 +2,11 @@ import { getToken } from "./auth";
 
 function baseUrl() {
   if (typeof window !== "undefined") {
-    return ((window as any).__linuxpg?.apiBaseUrl as string) ?? "http://localhost:8080";
+    const explicit = (window as any).__linuxpg?.apiBaseUrl as string | undefined;
+    if (explicit) return explicit;
+    // Default to same hostname as the web UI, but on the API port.
+    const proto = window.location.protocol === "https:" ? "https:" : "http:";
+    return `${proto}//${window.location.hostname}:8080`;
   }
   return process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 }
@@ -33,4 +37,3 @@ export function apiPost(path: string, body: any) {
 export function apiDelete(path: string) {
   return request("DELETE", path);
 }
-

@@ -8,7 +8,10 @@ import { getToken } from "../lib/auth";
 
 function wsBase() {
   if (typeof window !== "undefined") {
-    return ((window as any).__linuxpg?.apiWsUrl as string) ?? "ws://localhost:8080";
+    const explicit = (window as any).__linuxpg?.apiWsUrl as string | undefined;
+    if (explicit) return explicit;
+    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return `${proto}//${window.location.hostname}:8080`;
   }
   return process.env.NEXT_PUBLIC_API_WS_URL ?? "ws://localhost:8080";
 }
