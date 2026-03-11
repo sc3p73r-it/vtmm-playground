@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: linux_playground
+      POSTGRES_USER: linuxpg
+      POSTGRES_PASSWORD: linuxpg
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      DATABASE_URL: postgres://linuxpg:linuxpg@postgres:5432/linux_playground
+      JWT_SECRET: dev-secret-change-me
+      SESSION_TTL_MINUTES: 30
+      PLAYGROUND_IMAGE: ubuntu:22.04
+      PLAYGROUND_MEMORY_MB: 256
+      PLAYGROUND_NANO_CPUS: 500000000
+      CORS_ORIGIN: http://localhost:3000
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+      NEXT_PUBLIC_API_WS_URL: ws://localhost:8080
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+

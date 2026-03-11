@@ -1,0 +1,14 @@
+{
+  "name": "linux-playground",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev -w @linux-playground/api",
+    "dev:web": "npm run dev -w @linux-playground/web",
+    "build": "npm run build -w @linux-playground/api && npm run build -w @linux-playground/web",
+    "lint": "npm run lint -w @linux-playground/web"
+  }
+}
+

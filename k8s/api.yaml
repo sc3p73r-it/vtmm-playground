@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: linuxpg-api
+  namespace: linux-playground
+type: Opaque
+stringData:
+  JWT_SECRET: change-me
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: linuxpg-api
+  namespace: linux-playground
+data:
+  PORT: "8080"
+  SESSION_TTL_MINUTES: "30"
+  PLAYGROUND_IMAGE: "ubuntu:22.04"
+  PLAYGROUND_MEMORY_MB: "256"
+  PLAYGROUND_NANO_CPUS: "500000000"
+  CORS_ORIGIN: "*"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  namespace: linux-playground
+spec:
+  selector:
+    app: api
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: linux-playground
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+        - name: api
+          image: linux-playground-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DATABASE_URL
+              value: postgres://linuxpg:change-me@postgres.linux-playground.svc.cluster.local:5432/linux_playground
+          envFrom:
+            - configMapRef:
+                name: linuxpg-api
+            - secretRef:
+                name: linuxpg-api
+          volumeMounts:
+            - name: docker-sock
+              mountPath: /var/run/docker.sock
+      volumes:
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock
+            type: Socket
+
